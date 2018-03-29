@@ -7541,7 +7541,7 @@ editor_menu_main (NmCli *nmc, NMConnection *connection, const char *connection_t
 				} else
 					nmc->nmc_config_mutable.show_secrets = bb;
 			} else if (cmd_arg_p && matches (cmd_arg_p, "prompt-color")) {
-				g_printerr (_("Ignoring errorneous --prompt-color argument.\n"));
+				g_printerr (_("Ignoring errorneous --prompt-color argument. Use terminal-colors.d(5) to set the prompt color."));
 			} else if (!cmd_arg_p) {
 				g_print (_("Current nmcli configuration:\n"));
 				g_print ("status-line: %s\n"
