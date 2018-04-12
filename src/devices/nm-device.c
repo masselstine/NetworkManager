@@ -7562,11 +7562,11 @@ dhcp6_get_duid (NMDevice *self, NMConnection *connection, GBytes *hwaddr)
 	if (!duid) {
 		duid_default = nm_config_data_get_connection_default (NM_CONFIG_GET_DATA,
 		                                                      "ipv6.dhcp-duid", self);
-		if (duid_default && duid_default[0])
-			duid = duid_default;
+		if (!nm_utils_is_duid_valid (duid_default))
+			return NULL;
+
+		duid = duid_default;
 	}
-	if (!duid)
-		return NULL;
 
 	if (nm_streq (duid, "lease"))
 		return NULL;

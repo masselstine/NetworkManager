@@ -277,6 +277,17 @@ verify (NMSetting *setting, NMConnection *connection, GError **error)
 		}
 	}
 
+	if (priv->dhcp_duid) {
+		if (!nm_utils_is_duid_valid (priv->dhcp_duid)) {
+			g_set_error_literal (error,
+			                     NM_CONNECTION_ERROR,
+			                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
+			                     _("invalid DUID"));
+			g_prefix_error (error, "%s.%s: ", NM_SETTING_IP6_CONFIG_SETTING_NAME, NM_SETTING_IP6_CONFIG_DHCP_DUID);
+			return FALSE;
+		}
+	}
+
 	/* Failures from here on, are NORMALIZABLE_ERROR... */
 
 	if (token_needs_normalization) {

@@ -4438,6 +4438,64 @@ _nm_utils_inet6_is_token (const struct in6_addr *in6addr)
 }
 
 /**
+ * nm_utils_is_duid_valid:
+ * @duid: the candidate DUID
+ *
+ * Checks if @duid string contains either a special duid value ("LL",
+ * "LLT" or "lease") or a valid hex DUID.
+ *
+ * Return value: %TRUE or %FALSE
+ *
+ * Since: 1.12
+ */
+gboolean
+nm_utils_is_duid_valid (const char *duid)
+{
+#define DUID_MIN_OCTECTS   2
+#define DUID_MAX_OCTECTS 130
+	int i, duid_len;
+	int duid_hex_min = DUID_MIN_OCTECTS * 2;
+	int duid_hex_max = DUID_MAX_OCTECTS * 2;
+	gboolean has_comma = FALSE;
+
+	if (!duid)
+		return FALSE;
+
+	if (NM_IN_STRSET (duid, "LL", "LLT", "lease"))
+		return TRUE;
+
+	duid_len = strlen (duid);
+
+	if (duid_len > 2 && duid[2] == ':')
+		has_comma = TRUE;
+
+	/* MAX DUID lenght is 128 octects + the type code (2 octects).
+	 * We expect hex notation and optional comma for every octect. */
+	if (has_comma) {
+		duid_hex_min += DUID_MIN_OCTECTS - 1;
+		duid_hex_max += DUID_MAX_OCTECTS - 1;
+	}
+	if (   duid_len < duid_hex_min
+	    || duid_len > duid_hex_max)
+			return FALSE;
+
+#define CHAR_IS_HEX(c) (   ((c >= '0') && (c <= '9'))\
+                        || ((c >= 'A') && (c <= 'F'))\
+                        || ((c >= 'a') && (c <= 'f')))
+
+	for (i = 0; i < duid_len; i++) {
+		if (has_comma && ((i % 3) == 2)) {
+			if (duid[i] != ':')
+				return FALSE;
+			continue;
+		}
+		if (!CHAR_IS_HEX (duid[i]))
+			return FALSE;
+	}
+	return TRUE;
+}
+
+/**
  * nm_utils_check_virtual_device_compatibility:
  * @virtual_type: a virtual connection type
  * @other_type: a connection type to test against @virtual_type
