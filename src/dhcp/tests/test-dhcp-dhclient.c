@@ -809,10 +809,10 @@ test_write_existing_duid (void)
 	g_free (contents);
 }
 
+#define DUID "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302"
 static void
 test_write_existing_commented_duid (void)
 {
-	#define DUID "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302"
 	#define ORIG_CONTENTS "#default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n"
 	const char *expected_contents = \
 		"default-duid \"" DUID "\";\n"
@@ -840,6 +840,41 @@ test_write_existing_commented_duid (void)
 	g_assert_cmpstr (expected_contents, ==, contents);
 
 	g_free (contents);
+	#undef ORIG_CONTENTS
+}
+
+static void
+test_write_existing_multiline_duid (void)
+{
+	#define ORIG_CONTENTS "### Commented old DUID ###\n" \
+	                      "#default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n"
+	const char *expected_contents = \
+		"default-duid \"" DUID "\";\n"
+		ORIG_CONTENTS;
+	GError *error = NULL;
+	char *contents = NULL;
+	gboolean success;
+	const char *path = "test-dhclient-write-existing-multiline-duid.leases";
+
+	success = g_file_set_contents (path, ORIG_CONTENTS, -1, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* Save new DUID and append old comments */
+	success = nm_dhcp_dhclient_save_duid (path, DUID, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	/* reread original contents */
+	success = g_file_get_contents (path, &contents, NULL, &error);
+	g_assert_no_error (error);
+	g_assert (success);
+
+	unlink (path);
+	g_assert_cmpstr (expected_contents, ==, contents);
+
+	g_free (contents);
+	#undef ORIG_CONTENTS
 }
 
 /*****************************************************************************/
@@ -1023,6 +1058,7 @@ main (int argc, char **argv)
 	g_test_add_func ("/dhcp/dhclient/write_duid", test_write_duid);
 	g_test_add_func ("/dhcp/dhclient/write_existing_duid", test_write_existing_duid);
 	g_test_add_func ("/dhcp/dhclient/write_existing_commented_duid", test_write_existing_commented_duid);
+	g_test_add_func ("/dhcp/dhclient/write_existing_multiline_duid", test_write_existing_multiline_duid);
 
 	return g_test_run ();
 }
