@@ -1210,7 +1210,7 @@ auto_activate_device (NMPolicy *self,
 	if (!nm_device_autoconnect_allowed (device))
 		return;
 
-	connections = nm_manager_get_activatable_connections (priv->manager, &len, TRUE);
+	connections = nm_manager_get_activatable_connections (priv->manager, TRUE, TRUE, &len);
 	if (!connections[0])
 		return;
 
