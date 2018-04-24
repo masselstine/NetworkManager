@@ -340,7 +340,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			}
 
 			g_object_set(wireless_security_setting,
-					   newkey, typed_property_value ? typed_property_value : property_value,
+					   newkey, typed_property_value ?: property_value,
 					   NULL);
 			security = TRUE;
 
@@ -388,7 +388,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 			}
 
 			g_object_set(wireless_security_setting,
-					   newkey, typed_property_value ? typed_property_value : property_value,
+					   newkey, typed_property_value ?: property_value,
 					   NULL);
 			security = TRUE;
 
