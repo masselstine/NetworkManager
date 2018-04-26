@@ -198,6 +198,8 @@ const char *nm_strquote (char *buf, gsize buf_len, const char *str);
 
 const char *nm_utils_dbus_path_get_last_component (const char *dbus_path);
 
+int nm_utils_dbus_path_cmp (const char *dbus_path_a, const char *dbus_path_b);
+
 /*****************************************************************************/
 
 const char **nm_utils_strsplit_set (const char *str, const char *delimiters);
