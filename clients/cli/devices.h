@@ -34,7 +34,7 @@ NMDevice ** nmc_get_devices_sorted (NMClient *client);
 
 void nmc_device_state_to_color (NMDeviceState state, NMMetaTermColor *color, NMMetaTermFormat *color_fmt);
 
-extern const NmcMetaGenericInfo *const nmc_fields_dev_status[];
+extern const NmcMetaGenericInfo *const metagen_device_status[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_general[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_connections[];
 extern const NmcMetaGenericInfo *const nmc_fields_dev_show_cap[];
