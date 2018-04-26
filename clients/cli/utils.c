@@ -1421,14 +1421,6 @@ _print_do (const NmcConfig *nmc_config,
 
 			g_string_truncate (str, 0);
 		}
-
-		if (   pretty
-		    && (   i_row < row_len - 1
-		        || multiline)) {
-			gs_free char *line = NULL;
-
-			g_print ("%s\n", (line = g_strnfill (ML_HEADER_WIDTH, '-')));
-		}
 	}
 }
 
