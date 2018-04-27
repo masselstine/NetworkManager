@@ -204,13 +204,115 @@ const NmcMetaGenericInfo *const metagen_device_detail_general[_NMC_GENERIC_INFO_
 
 /*****************************************************************************/
 
-const NmcMetaGenericInfo *const nmc_fields_dev_show_connections[] = {
-	NMC_META_GENERIC ("NAME"),                         /* 0 */
-	NMC_META_GENERIC ("AVAILABLE-CONNECTION-PATHS"),   /* 1 */
-	NMC_META_GENERIC ("AVAILABLE-CONNECTIONS"),        /* 2 */
-	NULL,
+static gconstpointer
+_metagen_device_detail_connections_get_fcn (NMC_META_GENERIC_INFO_GET_FCN_ARGS)
+{
+	NMDevice *d = target;
+
+	NMC_HANDLE_TERMFORMAT (NM_META_TERM_COLOR_NORMAL);
+
+	switch (info->info_type) {
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CONNECTIONS_AVAILABLE_CONNECTIONS:
+		if (!NM_FLAGS_HAS (get_flags, NM_META_ACCESSOR_GET_FLAGS_ACCEPT_STRV))
+			return NULL;
+		/* fall-through */
+	case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CONNECTIONS_AVAILABLE_CONNECTION_PATHS:
+	{
+		const GPtrArray *avail_cons_arr;
+		gs_free NMRemoteConnection **avail_cons = NULL;
+		GString *str;
+		char **paths;
+		guint i, j, l;
+		gboolean had_prefix, has_prefix;
+
+		avail_cons_arr = nm_device_get_available_connections (d);
+		if (!avail_cons_arr || avail_cons_arr->len == 0)
+			return NULL;
+
+		l = avail_cons_arr->len;
+
+		avail_cons = (NMRemoteConnection **) nmc_objects_sort_by_path ((const NMObject *const*) avail_cons_arr->pdata, l);
+		nm_assert (l == NM_PTRARRAY_LEN (avail_cons));
+
+		if (info->info_type == NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CONNECTIONS_AVAILABLE_CONNECTIONS) {
+
+			paths = g_new (char *, l + 1);
+			j = 0;
+			for (i = 0; i < l; i++) {
+				NMRemoteConnection *ac = avail_cons[i];
+				const char *ac_id = nm_connection_get_id (NM_CONNECTION (ac));
+				const char *ac_uuid = nm_connection_get_uuid (NM_CONNECTION (ac));
+
+				if (!ac_id || !ac_uuid) {
+					const char *ac_path = nm_connection_get_path (NM_CONNECTION (ac));
+
+					if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY) {
+						paths[j++] =   ac_path
+						             ? g_strdup_printf (_("<invisible> | %s"), ac_path)
+						             : g_strdup (_("<invisible>"));
+					} else {
+						paths[j++] =   ac_path
+						             ? g_strdup_printf ("<invisible> | %s", ac_path)
+						             : g_strdup ("<invisible>");
+					}
+				} else
+					paths[j++] = g_strdup_printf ("%s | %s", ac_uuid, ac_id);
+			}
+			paths[j] = NULL;
+
+			*out_flags |= NM_META_ACCESSOR_GET_OUT_FLAGS_STRV;
+			return (*out_to_free = paths);
+		} else {
+			str = g_string_new (NULL);
+
+			had_prefix = FALSE;
+			for (i = 0; i < l; i++) {
+				NMRemoteConnection *ac = avail_cons[i];
+				const char *p = nm_connection_get_path (NM_CONNECTION (ac));
+
+				if (!p)
+					continue;
+
+				has_prefix =    g_str_has_prefix (p, NM_DBUS_PATH_SETTINGS"/")
+				             && p[NM_STRLEN (NM_DBUS_PATH_SETTINGS"/")];
+
+				if (str->len > 0) {
+					if (   had_prefix
+					    && !has_prefix)
+						g_string_append_c (str, '}');
+					g_string_append_c (str, ',');
+				}
+
+				if (!has_prefix)
+					g_string_append (str, p);
+				else {
+					if (!had_prefix)
+						g_string_printf (str, "%s/{", NM_DBUS_PATH_SETTINGS);
+					g_string_append (str, &p[NM_STRLEN (NM_DBUS_PATH_SETTINGS"/")]);
+				}
+				had_prefix = has_prefix;
+			}
+			if (had_prefix)
+				g_string_append_c (str, '}');
+
+			return (*out_to_free = g_string_free (str, FALSE));
+		}
+	}
+	default:
+		break;
+	}
+
+	g_return_val_if_reached (NULL);
+}
+
+const NmcMetaGenericInfo *const metagen_device_detail_connections[_NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CONNECTIONS_NUM + 1] = {
+#define _METAGEN_DEVICE_DETAIL_CONNECTIONS(type, name) \
+	[type] = NMC_META_GENERIC(name, .info_type = type, .get_fcn = _metagen_device_detail_connections_get_fcn)
+	_METAGEN_DEVICE_DETAIL_CONNECTIONS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CONNECTIONS_AVAILABLE_CONNECTION_PATHS, "AVAILABLE-CONNECTION-PATHS"),
+	_METAGEN_DEVICE_DETAIL_CONNECTIONS (NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_CONNECTIONS_AVAILABLE_CONNECTIONS,      "AVAILABLE-CONNECTIONS"),
 };
-#define NMC_FIELDS_DEV_SHOW_CONNECTIONS_COMMON  "NAME,AVAILABLE-CONNECTION-PATHS,AVAILABLE-CONNECTIONS"
+
+/*****************************************************************************/
 
 const NmcMetaGenericInfo *const nmc_fields_dev_show_cap[] = {
 	NMC_META_GENERIC ("NAME"),             /* 0 */
@@ -340,7 +442,7 @@ const NmcMetaGenericInfo *const nmc_fields_dev_show_sections[] = {
 	NMC_META_GENERIC_WITH_NESTED ("BRIDGE",            nmc_fields_dev_show_master_prop + 1),  /* 13 */
 	NMC_META_GENERIC_WITH_NESTED ("VLAN",              nmc_fields_dev_show_vlan_prop + 1),    /* 14 */
 	NMC_META_GENERIC_WITH_NESTED ("BLUETOOTH",         nmc_fields_dev_show_bluetooth + 1),    /* 15 */
-	NMC_META_GENERIC_WITH_NESTED ("CONNECTIONS",       nmc_fields_dev_show_connections + 1),  /* 16 */
+	NMC_META_GENERIC_WITH_NESTED ("CONNECTIONS",       metagen_device_detail_connections),    /* 16 */
 	NULL,
 };
 #define NMC_FIELDS_DEV_SHOW_SECTIONS_COMMON  "GENERAL.DEVICE,GENERAL.TYPE,GENERAL.HWADDR,GENERAL.MTU,GENERAL.STATE,"\
@@ -1475,55 +1577,17 @@ show_device_info (NMDevice *device, NmCli *nmc)
 			}
 		}
 
-		/* section CONNECTIONS */
-		if (!strcasecmp (nmc_fields_dev_show_sections[section_idx]->name, nmc_fields_dev_show_sections[16]->name)) {
-			const GPtrArray *avail_cons;
-			GString *ac_paths_str;
-			char **ac_arr = NULL;
-			int i;
-			NMC_OUTPUT_DATA_DEFINE_SCOPED (out);
+		if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_connections) {
+			gs_free char *f = section_fld ? g_strdup_printf ("CONNECTIONS.%s", section_fld) : NULL;
 
-			tmpl = (const NMMetaAbstractInfo *const*) nmc_fields_dev_show_connections;
-			out_indices = parse_output_fields (section_fld,
-			                                   tmpl, FALSE, NULL, NULL);
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_FIELD_NAMES);
-			g_ptr_array_add (out.output_data, arr);
-
-			/* available-connections */
-			avail_cons = nm_device_get_available_connections (device);
-			ac_paths_str = g_string_new (NULL);
-			if (avail_cons->len) {
-				ac_arr = g_new (char *, avail_cons->len + 1);
-				ac_arr[avail_cons->len] = NULL;
-			}
-			for (i = 0; i < avail_cons->len; i++) {
-				NMRemoteConnection *avail_con = g_ptr_array_index (avail_cons, i);
-				const char *ac_path = nm_connection_get_path (NM_CONNECTION (avail_con));
-				const char *ac_id = nm_connection_get_id (NM_CONNECTION (avail_con));
-				const char *ac_uuid = nm_connection_get_uuid (NM_CONNECTION (avail_con));
-
-				ac_arr[i] = g_strdup_printf ("%s | %s", ac_uuid, ac_id);
-
-				if (i == 0)
-					g_string_printf (ac_paths_str, "%s/{", NM_DBUS_PATH_SETTINGS);
-				else
-					g_string_append_c (ac_paths_str, ',');
-				g_string_append (ac_paths_str, strrchr (ac_path, '/') + 1);
-			}
-			if (ac_paths_str->len > 0)
-				g_string_append_c (ac_paths_str, '}');
-
-			arr = nmc_dup_fields_array (tmpl, NMC_OF_FLAG_SECTION_PREFIX);
-			set_val_strc (arr, 0, nmc_fields_dev_show_sections[16]->name);  /* "CONNECTIONS" */
-			set_val_str  (arr, 1, ac_paths_str->str);
-			set_val_arr  (arr, 2, (ac_arr));
-			g_ptr_array_add (out.output_data, arr);
-
-			print_data_prepare_width (out.output_data);
-			print_data (&nmc->nmc_config, out_indices, NULL, 0, &out);
-
-			g_string_free (ac_paths_str, FALSE);
+			nmc_print (&nmc->nmc_config,
+			           (gpointer[]) { device, NULL },
+			           NULL,
+			           NMC_META_GENERIC_GROUP ("CONNECTIONS", metagen_device_detail_connections, N_("GROUP")),
+			           f,
+			           NULL);
 			was_output = TRUE;
+			continue;
 		}
 	}
 
