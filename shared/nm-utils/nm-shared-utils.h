@@ -196,6 +196,10 @@ const char *nm_strquote (char *buf, gsize buf_len, const char *str);
 
 /*****************************************************************************/
 
+const char *nm_utils_dbus_path_get_last_component (const char *dbus_path);
+
+/*****************************************************************************/
+
 const char **nm_utils_strsplit_set (const char *str, const char *delimiters);
 
 gssize nm_utils_strv_find_first (char **list, gssize len, const char *needle);
