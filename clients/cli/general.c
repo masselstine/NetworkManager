@@ -1311,7 +1311,7 @@ do_overview (NmCli *nmc, int argc, char **argv)
 		nmc_device_state_to_color (state, &color, &color_fmt);
 		tmp = nmc_colorize (nmc->nmc_config.use_colors, color, color_fmt, "%s: %s%s%s",
 		                    nm_device_get_iface (devices[i]),
-		                    nmc_device_state_to_string (state),
+		                    gettext (nmc_device_state_to_string (state)),
 		                    ac ? " to " : "",
 		                    ac ? nm_active_connection_get_id (ac) : "");
 		g_print ("%s\n", tmp);
