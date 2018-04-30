@@ -250,6 +250,7 @@ struct _NmcMetaGenericInfo {
 	gpointer environment_user_data, \
 	const NmcMetaGenericInfo *info, \
 	gpointer target, \
+	gpointer target_data, \
 	NMMetaAccessorGetType get_type, \
 	NMMetaAccessorGetFlags get_flags, \
 	NMMetaAccessorGetOutFlags *out_flags, \
@@ -319,6 +320,7 @@ nmc_meta_generic_get_enum_with_detail (gint64 enum_val, const char *str_val, NMM
 
 gboolean nmc_print (const NmcConfig *nmc_config,
                     gpointer const *targets,
+                    gpointer targets_data,
                     const char *header_name_no_l10n,
                     const NMMetaAbstractInfo *const*fields,
                     const char *fields_str,
