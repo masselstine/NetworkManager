@@ -184,4 +184,6 @@ if __name__ == '__main__':
     else:
         usage()
 
-    main_loop.run()
+    if not nm_pyutil.Util.GMainLoop_run(main_loop, timeout = 2000):
+        print("Error: timeout waiting for reply")
+        sys.exit(1)
