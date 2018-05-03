@@ -12,6 +12,8 @@
 #
 # Copyright 2018 Red Hat, Inc.
 
+import sys
+
 ###############################################################################
 # nm_pyutil.py contains helper functions used by some examples. The helper functions
 # should be simple and independent, so that the user can extract them easily
@@ -68,5 +70,85 @@ def nm_boot_time_ms():
     return nm_boot_time_ns() / 1000000
 def nm_boot_time_s():
     return nm_boot_time_ns() / 1000000000
+
+###############################################################################
+
+class Util:
+
+    PY3 = (sys.version_info[0] == 3)
+
+    STRING_TYPE = (str if PY3 else basestring)
+
+    @classmethod
+    def create_uuid(cls):
+        n = getattr(cls, '_uuid', None)
+        if n is None:
+            import uuid
+            n = uuid
+            cls._uuid = n
+        return str(n.uuid4())
+
+    @classmethod
+    def NM(cls):
+        n = getattr(cls, '_NM', None)
+        if n is None:
+            import gi
+            gi.require_version('NM', '1.0')
+            from gi.repository import NM, GLib, Gio, GObject
+            cls._NM = NM
+            cls._GLib = GLib
+            cls._Gio = Gio
+            cls._GObject = GObject
+            n = NM
+        return n
+
+    @classmethod
+    def GLib(cls):
+        cls.NM()
+        return cls._GLib
+
+    @classmethod
+    def Gio(cls):
+        cls.NM()
+        return cls._Gio
+
+    @classmethod
+    def GObject(cls):
+        cls.NM()
+        return cls._GObject
+
+    @classmethod
+    def GMainLoop(cls, mainloop = None):
+        if mainloop is not None:
+            return mainloop
+        gmainloop = getattr(cls, '_GMainLoop', None)
+        if gmainloop is None:
+            gmainloop = cls.GLib().MainLoop()
+            cls._GMainLoop = gmainloop
+        return gmainloop
+
+    @classmethod
+    def GMainLoop_run(cls, mainloop = None, timeout = None):
+        if timeout is None:
+            cls.GMainLoop(mainloop).run()
+            return True
+
+        GLib = cls.GLib()
+        loop = cls.GMainLoop(mainloop)
+        result = []
+        def _timeout_cb(unused):
+            result.append(1)
+            loop.quit()
+            return False
+        timeout_id = GLib.timeout_add(int(timeout * 1000), _timeout_cb, None)
+        loop.run()
+        if result:
+            return False
+        GLib.source_remove(timeout_id)
+        return True
+
+    @classmethod
+    def GMainLoop_iterate(cls, mainloop = None, may_block = False):
+        return cls.GMainLoop(mainloop).get_context().iteration(may_block)
 
 ###############################################################################
