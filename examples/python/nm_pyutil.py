@@ -13,7 +13,7 @@
 # Copyright 2018 Red Hat, Inc.
 
 ###############################################################################
-# nmex.py contains helper functions used by some examples. The helper functions
+# nm_pyutil.py contains helper functions used by some examples. The helper functions
 # should be simple and independent, so that the user can extract them easily
 # when modifying the example to his needs.
 ###############################################################################
