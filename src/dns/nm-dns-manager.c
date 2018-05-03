@@ -1253,8 +1253,8 @@ rebuild_domain_lists (NMDnsManager *self)
 		priority = nm_ip_config_get_dns_priority (ip_config);
 		nm_assert (priority != 0);
 		domains = g_new0 (const char *,
-		                  2 + NM_MAX (nm_ip_config_get_num_searches (ip_config),
-		                              nm_ip_config_get_num_domains (ip_config)));
+		                  2 + (   nm_ip_config_get_num_searches (ip_config)
+		                       ?: nm_ip_config_get_num_domains (ip_config)));
 
 		/* Add wildcard lookup domain to connections with the default route.
 		 * If there is no default route, add the wildcard domain to all non-VPN
